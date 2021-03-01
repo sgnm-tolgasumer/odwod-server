@@ -1,6 +1,5 @@
 package org.acme;
 
-import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -9,9 +8,6 @@ import java.util.List;
 
 @Path("/customer")
 public class CustomerResource {
-
-    @Inject
-    KafkaService kafkaService;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
@@ -35,7 +31,6 @@ public class CustomerResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(Customer customer) {
         customer.persist();
-        kafkaService.publishAsJson(customer, 1);
         return Response.status(Response.Status.CREATED).entity(customer).build();
     }
 
@@ -47,9 +42,10 @@ public class CustomerResource {
     public Customer update(@PathParam("id") Long id, Customer customer) {
         Customer entity = customer.findById(id);
         entity.name = customer.name;
-        entity.age = customer.age;
+        entity.surname = customer.surname;
+        entity.telephone = customer.telephone;
+        entity.birthDate = customer.birthDate;
         entity.persist();
-        kafkaService.publishAsJson(entity, 1);
         return entity;
     }
 
@@ -65,19 +61,4 @@ public class CustomerResource {
         return Response.status(Response.Status.OK).build();
     }
 
-    /*
-    @GET
-    @Path("{id}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Customer getById(@PathParam("id") String id){
-        return CustomerService.getById(id);
-    }
-
-    @POST
-    @Consumes("application/json")
-    @Produces("application/json")
-    public Customer create(Customer CustomerToCreate){
-        return CustomerService.create(CustomerToCreate);
-    }
-     */
 }
