@@ -1,6 +1,6 @@
 package org.acme;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import io.vertx.core.json.JsonArray;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -95,7 +95,8 @@ public class KafkaService {
     }
 
     public String getAll(String topicId) {
-        String response = " ";
+        //JsonArray ja = new JsonArray();
+        String response = "[ ";
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
             consumer.subscribe(Arrays.asList(topicId));
@@ -107,14 +108,17 @@ public class KafkaService {
                     System.out.printf("Offset = %d\n", record.offset());
                     System.out.printf("Key    = %s\n", record.key());
                     System.out.printf("Value  = %s\n", record.value());
-                    response += record.value();
+                    //ja.add(record.value());
+                    response += record.value() + ",";
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
         }
-        return response;
+        response = response.substring(0, response.length() -1);
+        return response + "]";
     }
 
        /* public void publishAsJson(Object obj, int channelId) {

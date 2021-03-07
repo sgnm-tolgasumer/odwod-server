@@ -16,7 +16,6 @@ public class WorkOrderResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    //TODO kafkaservice move
     public String getAll(@QueryParam("topicId") String topicId) {
 
         return kafkaService.getAll(topicId);
