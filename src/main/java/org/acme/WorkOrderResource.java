@@ -5,6 +5,7 @@ import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.RandomStringUtils;
 
 
 @Path("/workorder")
@@ -33,9 +34,22 @@ public class WorkOrderResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response create(WorkOrder workOrder) {
+        workOrder.workOrderId = idCreator();
         kafkaService.publish(workOrder);
         System.out.println(workOrder.description);
+        System.out.println(workOrder.addressDistrict);
         return Response.status(Response.Status.CREATED).build();
+    }
+
+    /**
+    This function created to generate random 16 character IDs. May not be unique it MUST be changed with UUID in future.
+     **/
+    public static String idCreator() {
+        final int SHORT_ID_LENGTH = 16;
+        // Using all possible alpha numeric characters inside the ID.
+        String shortId = RandomStringUtils.randomAlphanumeric(SHORT_ID_LENGTH);
+        System.out.println(shortId);
+        return shortId;
     }
 
 /*
@@ -58,8 +72,7 @@ public class WorkOrderResource {
         kafkaService.publishAsJson(entity, 0);
         return entity;
     }
-*/
-    /*
+
     @Transactional
     @DELETE
     @Path("{id}")
@@ -72,8 +85,7 @@ public class WorkOrderResource {
         System.out.println();
         return Response.status(Response.Status.OK).build();
     }
-*/
-    /*
+
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -87,5 +99,5 @@ public class WorkOrderResource {
     public Employee create(Employee employeeToCreate){
         return employeeService.create(employeeToCreate);
     }
-     */
+    */
 }

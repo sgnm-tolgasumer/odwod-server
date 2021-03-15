@@ -7,6 +7,7 @@ import javax.persistence.Id;
 
 @Entity
 public class WorkOrder {
+    public String workOrderId;
     public String userId;
     public String title;
     public String description;
