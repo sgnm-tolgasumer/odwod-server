@@ -6,6 +6,11 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
 
+/**
+ * /customer endpoint to do CRUD operations of customers via HTTP REST API.
+ * These operations for Panache Entity type it directly communicates with MySQL database.
+ **/
+
 @Path("/customer")
 public class CustomerResource {
 

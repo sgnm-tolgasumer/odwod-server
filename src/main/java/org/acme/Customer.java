@@ -11,5 +11,4 @@ public class Customer extends PanacheEntity {
     public String telephone;
     public String mail;
     public String birthDate;
-
 }
