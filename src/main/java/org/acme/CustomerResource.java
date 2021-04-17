@@ -20,6 +20,16 @@ public class CustomerResource {
         return Customer.listAll();
     }
 
+    /**
+    It gets the number of records in Customer table on MySQL database.
+    */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getCount(@QueryParam("customerCount") String customerCount) {
+        String count = "{\"count\": \"" + Customer.count() + "\" }";
+        return count;
+    }
+
     @GET
     @Path("{id}")
     public Customer getSingle(@PathParam("id") Long id) {

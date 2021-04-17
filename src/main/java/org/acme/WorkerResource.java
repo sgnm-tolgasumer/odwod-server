@@ -25,6 +25,16 @@ public class WorkerResource {
         return entity;
     }
 
+    /**
+     It gets the number of records in Worker table on MySQL database.
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getCount(@QueryParam("workerCount") String workerCount) {
+        String count = "{\"count\": \"" + Worker.count() + "\" }";
+        return count;
+    }
+
     @Transactional
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
