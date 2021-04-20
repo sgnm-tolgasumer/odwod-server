@@ -7,4 +7,13 @@ import javax.persistence.Entity;
 @Entity
 public class District extends PanacheEntity {
     public String districtName;
+
+
+    public District(String districtName) {
+        this.districtName = districtName;
+    }
+
+    public District() {
+
+    }
 }
