@@ -24,8 +24,9 @@ public class CustomerResource {
     It gets the number of records in Customer table on MySQL database.
     */
     @GET
+    @Path("{customerCount}")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getCount(@QueryParam("customerCount") String customerCount) {
+    public String getCount(@PathParam("customerCount") String customerCount) {
         String count = "{\"count\": \"" + Customer.count() + "\" }";
         return count;
     }
