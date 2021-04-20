@@ -15,4 +15,19 @@ public class Worker extends PanacheEntity {
     public String workableDistricts;
     public String jobTypes;
 
+
+    @Override
+    public String toString() {
+        return "Worker{" +
+                "userId='" + userId + '\'' +
+                ", name='" + name + '\'' +
+                ", surname='" + surname + '\'' +
+                ", telephone='" + telephone + '\'' +
+                ", mail='" + mail + '\'' +
+                ", birthDate='" + birthDate + '\'' +
+                ", addressCity='" + addressCity + '\'' +
+                ", workableDistricts='" + workableDistricts + '\'' +
+                ", jobTypes='" + jobTypes + '\'' +
+                '}';
+    }
 }

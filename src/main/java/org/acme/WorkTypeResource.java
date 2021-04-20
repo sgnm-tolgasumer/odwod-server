@@ -1,7 +1,5 @@
 package org.acme;
 
-import org.hibernate.jdbc.Work;
-
 import javax.transaction.Transactional;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
