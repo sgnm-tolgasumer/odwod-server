@@ -1,11 +1,6 @@
 package org.acme;
 
-import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-
-@Entity
 public class WorkOrder {
     public String workOrderId;
     public String userId;
@@ -18,15 +13,38 @@ public class WorkOrder {
     public String openAddress;
     public String workerId;
     public int status;
-    private Long id;
 
-
-    public void setId(Long id) {
-        this.id = id;
+    public WorkOrder(String workOrderId, String userId, String title, String description, String type, String telephone, String addressCity, String addressDistrict, String openAddress, String workerId, int status) {
+        this.workOrderId = workOrderId;
+        this.userId = userId;
+        this.title = title;
+        this.description = description;
+        this.type = type;
+        this.telephone = telephone;
+        this.addressCity = addressCity;
+        this.addressDistrict = addressDistrict;
+        this.openAddress = openAddress;
+        this.workerId = workerId;
+        this.status = status;
     }
 
-    @Id
-    public Long getId() {
-        return id;
+    public WorkOrder() {
+    }
+
+    @Override
+    public String toString() {
+        return "WorkOrder{" +
+                "workOrderId='" + workOrderId + '\'' +
+                ", userId='" + userId + '\'' +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", type='" + type + '\'' +
+                ", telephone='" + telephone + '\'' +
+                ", addressCity='" + addressCity + '\'' +
+                ", addressDistrict='" + addressDistrict + '\'' +
+                ", openAddress='" + openAddress + '\'' +
+                ", workerId='" + workerId + '\'' +
+                ", status=" + status +
+                '}';
     }
 }

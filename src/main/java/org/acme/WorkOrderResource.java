@@ -7,6 +7,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 
 @Path("/workorder")
 public class WorkOrderResource {
@@ -14,21 +18,127 @@ public class WorkOrderResource {
     @Inject
     KafkaService kafkaService;
 
+    /**
+     * This function created to generate random 16 character IDs. May not be unique it MUST be changed with UUID in
+     * future.
+     * @return id as String.
+     */
+    public static String idCreator() {
+        final int SHORT_ID_LENGTH = 16;
+        // Using all possible alpha numeric characters inside the ID.
+        String shortId = RandomStringUtils.randomAlphanumeric(SHORT_ID_LENGTH);
+        System.out.println(shortId);
+        return shortId;
+    }
 
+    /**
+     * It returns all work orders according to given Kafka topic.
+     * @param topicId String.
+     * @return Work orders as JSON.
+     */
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public String getAll(@QueryParam("topicId") String topicId) {
+    public List<WorkOrder> getAll(@QueryParam("topicId") String topicId) {
+        if(topicId.equals("pending")) {
+            List<WorkOrder> workOrdersPending = new ArrayList<>();
+            List<WorkOrder> workOrdersProgress = new ArrayList<>();
+            List<WorkOrder> workOrdersDone = new ArrayList<>();
+            List<WorkOrder> workOrdersExpired = new ArrayList<>();
+
+            workOrdersPending = kafkaService.getAll("pending");
+            workOrdersProgress = kafkaService.getAll("in_progress");
+            workOrdersDone = kafkaService.getAll("done");
+            workOrdersExpired = kafkaService.getAll("expired");
+
+            workOrdersPending.removeAll(workOrdersProgress);
+            workOrdersPending.removeAll(workOrdersDone);
+            workOrdersPending.removeAll(workOrdersExpired);
+
+            return workOrdersPending;
+        }
+        else if(topicId.equals("in_progress")) {
+                List<WorkOrder> workOrdersProgress = new ArrayList<>();
+                List<WorkOrder> workOrdersDone = new ArrayList<>();
+                List<WorkOrder> workOrdersExpired = new ArrayList<>();
+
+                workOrdersProgress = kafkaService.getAll("in_progress");
+                workOrdersDone = kafkaService.getAll("done");
+                workOrdersExpired = kafkaService.getAll("expired");
+
+                workOrdersProgress.removeAll(workOrdersDone);
+                workOrdersProgress.removeAll(workOrdersExpired);
+
+                return workOrdersProgress;
+        }
 
         return kafkaService.getAll(topicId);
     }
 
+    /**
+     * It returns work orders according to worker's preferred job types and workable districts.
+     * @param userId
+     * @return Work orders as JSON.
+     */
     @GET
-    @Path("{id}")
-    public String getSingle(@PathParam("id") Long id) {
+    @Path("{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<WorkOrder> getByWorkerPreferences(@PathParam("userId") String userId) {
+        List<WorkOrder> workOrdersPending = new ArrayList<>();
+        List<WorkOrder> workOrdersByPref = new ArrayList<>();
+        workOrdersPending = getAll("pending");
+        System.out.println(workOrdersPending);
+        Worker worker = Worker.find("userId", userId).firstResult();
+        //Worker worker = Worker.find("userId = ?1", userId).firstResult();
 
-       return kafkaService.getSingle(id);
+        System.out.println(userId);
+
+        System.out.println(worker.toString());
+        List<String> jobTypes = Arrays.asList(worker.jobTypes.split(","));
+        List<String> workableDistricts = Arrays.asList(worker.workableDistricts.split(","));
+        for (WorkOrder workOrder: workOrdersPending) {
+           String type = workOrder.type;
+           String district = workOrder.addressDistrict;
+           if(jobTypes.contains(type) && workableDistricts.contains(district))
+           {
+               workOrdersByPref.add(workOrder);
+           }
+        }
+        return workOrdersByPref;
     }
 
+    @GET
+    @Path("{workOrderId}/{topic}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public WorkOrder getSingle(@PathParam("workOrderId") String workOrderId, @PathParam("topic") String topic) {
+        System.out.println(workOrderId + topic);
+       return kafkaService.getSingle(workOrderId, topic);
+    }
+
+    /**
+     * It returns the current status of given work order.
+     * @param workOrderId
+     * @return status as String.
+     */
+    @GET
+    @Path("status/{workOrderId}")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getStatus(@PathParam("workOrderId") String workOrderId) {
+
+        if (kafkaService.getSingle(workOrderId, "done") != null)
+            return "Done";
+        else if (kafkaService.getSingle(workOrderId, "expired") != null)
+            return "Expired";
+        else if (kafkaService.getSingle(workOrderId, "in_progress") != null)
+            return "In Progress";
+        else
+            return "Pending";
+    }
+
+    /**
+     * It creates a work order and publishes to pending topic in Kafka.
+     * @param workOrder
+     * @return Response.
+     */
     @Transactional
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
@@ -42,14 +152,45 @@ public class WorkOrderResource {
     }
 
     /**
-    This function created to generate random 16 character IDs. May not be unique it MUST be changed with UUID in future.
-     **/
-    public static String idCreator() {
-        final int SHORT_ID_LENGTH = 16;
-        // Using all possible alpha numeric characters inside the ID.
-        String shortId = RandomStringUtils.randomAlphanumeric(SHORT_ID_LENGTH);
-        System.out.println(shortId);
-        return shortId;
+     * it returns all work orders according to workers' unique id.
+     * @param workerId
+     * @return Work orders as JSON.
+     */
+    @GET
+    @Path("worker/{workerId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<WorkOrder> getWorkOrderByWorker(@PathParam("workerId") String workerId) {
+        return kafkaService.getAllByWorkerId(workerId);
+    }
+
+    /**
+     * It returns all work orders according to customer's unique id.
+     * @param customerId
+     * @return Work orders as JSON.
+     */
+    @GET
+    @Path("customer/{customerId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<WorkOrder> getWorkOrderByCustomer(@PathParam("customerId") String customerId) {
+        return kafkaService.getAllByCustomerId(customerId);
+    }
+
+    /**
+     * It transfers specific work order from one Kafka topic to another.
+     * @param workOrderId
+     * @param sourceTopic
+     * @param targetTopic
+     * @param workerId
+     * @return Response
+     */
+    @Transactional
+    @POST
+    @Path("transfer/{workOrderId}/{sourceTopic}/{targetTopic}/{workerId}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response transfer(@PathParam("workOrderId") String workOrderId, @PathParam("sourceTopic") String sourceTopic, @PathParam("targetTopic") String targetTopic, @PathParam("workerId") String workerId) {
+        kafkaService.transferWorder(workOrderId, sourceTopic, targetTopic, workerId);
+        return Response.status(Response.Status.OK).build();
     }
 
 /*
