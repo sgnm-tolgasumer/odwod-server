@@ -32,7 +32,8 @@ public class WorkOrderResource {
     }
 
     /**
-     * It returns all work orders according to given Kafka topic.
+     * It returns all work orders according to given Kafka topic with checking other topics for to be sure this work
+     * order only exist in given topicId.
      * @param topicId String.
      * @return Work orders as JSON.
      */
@@ -44,15 +45,39 @@ public class WorkOrderResource {
             List<WorkOrder> workOrdersProgress = new ArrayList<>();
             List<WorkOrder> workOrdersDone = new ArrayList<>();
             List<WorkOrder> workOrdersExpired = new ArrayList<>();
+            List<WorkOrder> temp = new ArrayList<>();
 
             workOrdersPending = kafkaService.getAll("pending");
             workOrdersProgress = kafkaService.getAll("in_progress");
             workOrdersDone = kafkaService.getAll("done");
             workOrdersExpired = kafkaService.getAll("expired");
 
-            workOrdersPending.removeAll(workOrdersProgress);
-            workOrdersPending.removeAll(workOrdersDone);
-            workOrdersPending.removeAll(workOrdersExpired);
+            for (WorkOrder woPending:workOrdersPending)
+            {
+                for (WorkOrder woInProgress: workOrdersProgress)
+                {
+
+                    if (woPending.workOrderId.equals(woInProgress.workOrderId))
+                    {
+                        temp.add(woPending);
+                    }
+                }
+                for (WorkOrder woDone: workOrdersDone)
+                {
+                    if (woPending.workOrderId.equals(woDone.workOrderId))
+                    {
+                        temp.add(woPending);
+                    }
+                }
+                for (WorkOrder woExpired: workOrdersExpired)
+                {
+                    if (woPending.workOrderId.equals(woExpired.workOrderId))
+                    {
+                        temp.add(woPending);
+                    }
+                }
+            }
+            workOrdersPending.removeAll(temp);
 
             return workOrdersPending;
         }
@@ -76,7 +101,7 @@ public class WorkOrderResource {
 
     /**
      * It returns work orders according to worker's preferred job types and workable districts.
-     * @param userId
+     * @param userId String.
      * @return Work orders as JSON.
      */
     @GET
@@ -116,7 +141,7 @@ public class WorkOrderResource {
 
     /**
      * It returns the current status of given work order.
-     * @param workOrderId
+     * @param workOrderId String.
      * @return status as String.
      */
     @GET
@@ -136,7 +161,7 @@ public class WorkOrderResource {
 
     /**
      * It creates a work order and publishes to pending topic in Kafka.
-     * @param workOrder
+     * @param workOrder String.
      * @return Response.
      */
     @Transactional
@@ -153,7 +178,7 @@ public class WorkOrderResource {
 
     /**
      * it returns all work orders according to workers' unique id.
-     * @param workerId
+     * @param workerId String.
      * @return Work orders as JSON.
      */
     @GET
@@ -165,7 +190,7 @@ public class WorkOrderResource {
 
     /**
      * It returns all work orders according to customer's unique id.
-     * @param customerId
+     * @param customerId String.
      * @return Work orders as JSON.
      */
     @GET
@@ -177,10 +202,10 @@ public class WorkOrderResource {
 
     /**
      * It transfers specific work order from one Kafka topic to another.
-     * @param workOrderId
-     * @param sourceTopic
-     * @param targetTopic
-     * @param workerId
+     * @param workOrderId String.
+     * @param sourceTopic String.
+     * @param targetTopic String.
+     * @param workerId String.
      * @return Response
      */
     @Transactional
