@@ -143,7 +143,7 @@ public class WorkOrderResource {
     @Path("activeCount/")
     @Produces(MediaType.APPLICATION_JSON)
     public String getCountActiveWorkOrders() {
-        return "{\"count\": \"" + getAll("in_progress").size() + "\" }";
+        return "{\"count\": \"" + (getAll("in_progress").size() + getAll("pending").size()) + "\" }";
     }
 
     /**
