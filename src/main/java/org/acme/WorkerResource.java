@@ -17,6 +17,7 @@ public class WorkerResource {
 
     @GET
     @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Worker getSingle(@PathParam("id") Long id) {
         Worker entity = Worker.findById(id);
         if (entity == null) {
@@ -29,11 +30,10 @@ public class WorkerResource {
      It gets the number of records in Worker table on MySQL database.
      */
     @GET
-    @Path("{workerCount}")
+    @Path("workerCount/")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getCount(@PathParam("workerCount") String workerCount) {
-        String count = "{\"count\": \"" + Worker.count() + "\" }";
-        return count;
+    public String getCount() {
+        return "{\"count\": \"" + Worker.count() + "\" }";
     }
 
     @Transactional

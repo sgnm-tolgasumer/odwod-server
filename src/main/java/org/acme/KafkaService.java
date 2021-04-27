@@ -8,12 +8,10 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.eclipse.microprofile.reactive.messaging.Channel;
 import org.eclipse.microprofile.reactive.messaging.Emitter;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 @ApplicationScoped
 public class KafkaService {
@@ -34,7 +32,7 @@ public class KafkaService {
     @Channel("expired")
     Emitter<WorkOrder> expiredEmitter;
 
-    public Properties consumerConfig(){
+    public Properties consumerConfig() {
         Properties props = new Properties();
         props.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG,
                 "localhost:9092");
@@ -53,10 +51,10 @@ public class KafkaService {
 
     /**
      * It publishes the work order according to its status into the kafka topics.
-     * */
-    public void publish(WorkOrder obj){
+     */
+    public void publish(WorkOrder obj) {
 
-        switch (obj.status){
+        switch (obj.status) {
             case 0:
                 pendingEmitter.send(obj);
                 break;
@@ -79,7 +77,7 @@ public class KafkaService {
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
-            consumer.subscribe(Arrays.asList(topic));
+            consumer.subscribe(Collections.singletonList(topic));
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
@@ -90,16 +88,11 @@ public class KafkaService {
                     ObjectMapper objectMapper = new ObjectMapper();
                     WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
 
-                    if(workOrder.workOrderId.equals(workOrderId)) {
+                    if (workOrder.workOrderId.equals(workOrderId)) {
                         System.out.println(workOrder.toString());
                         return workOrder;
 
                     }
-                    /*
-                   System.out.printf("Offset = %d\n", record.offset());
-                   System.out.printf("Key    = %s\n", record.key());
-                   System.out.printf("Value  = %s\n", record.value());
-                   */
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -111,13 +104,13 @@ public class KafkaService {
 
     /**
      * It searches and returns all work orders according to worker's unique id.
-     * */
+     */
     public List<WorkOrder> getAllByWorkerId(String workerId) {
 
         List<WorkOrder> workOrders = new ArrayList<>();
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
-            consumer.subscribe(Arrays.asList("in_progress"));
+            consumer.subscribe(Collections.singletonList("in_progress"));
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
@@ -127,16 +120,10 @@ public class KafkaService {
                     ObjectMapper objectMapper = new ObjectMapper();
                     WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
 
-                    if(workOrder.workerId != null && workOrder.workerId.equals(workerId)) {
+                    if (workOrder.workerId != null && workOrder.workerId.equals(workerId)) {
                         System.out.println(workOrder.toString());
                         workOrders.add(workOrder);
                     }
-
-                   /*
-                   System.out.printf("Offset = %d\n", record.offset());
-                   System.out.printf("Key    = %s\n", record.key());
-                   System.out.printf("Value  = %s\n", record.value());
-                   */
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -148,35 +135,40 @@ public class KafkaService {
 
     /**
      * It searches and returns all work orders according to customer's unique id.
-     * */
-    public List<WorkOrder> getAllByCustomerId(String customerId) {
-
+     */
+    public List<WorkOrder> getAllByCustomerId(String userId) {
+        final int giveUp = 5;
+        int noRecordsCount = 0;
         List<WorkOrder> workOrders = new ArrayList<>();
+
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
-            consumer.subscribe(Arrays.asList("pending"));
+            consumer.subscribe(Collections.singletonList("pending"));
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
-                ConsumerRecords<String, String> records = consumer.poll(100);
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(100);
 
-                for (ConsumerRecord<String, String> record : records) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
-
-                    if(workOrder.userId != null && workOrder.userId.equals(customerId)) {
-                        System.out.println(workOrder.toString());
-                        workOrders.add(workOrder);
+                    if (records.count() == 0) {
+                        noRecordsCount++;
+                        if (noRecordsCount > giveUp) break;
+                        else continue;
                     }
 
-                   /*
-                   System.out.printf("Offset = %d\n", record.offset());
-                   System.out.printf("Key    = %s\n", record.key());
-                   System.out.printf("Value  = %s\n", record.value());
-                   */
+                    for (ConsumerRecord<String, String> record : records) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
+                        if (workOrder.userId.equals(userId)) {
+                            System.out.println(workOrder.toString());
+                            workOrders.add(workOrder);
+                        }
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                consumer.close();
             }
 
         }
@@ -185,12 +177,12 @@ public class KafkaService {
 
     /**
      * It transfers the given work order to one Kafka topic to another according to the given parameters.
-     * */
-    public void transferWorder(String workOrderId, String sourceTopic, String targetTopic, String workerId){
+     */
+    public void transferWorder(String workOrderId, String sourceTopic, String targetTopic, String workerId) {
         WorkOrder objToTransfer = getSingle(workOrderId, sourceTopic);
         System.out.println(objToTransfer);
 
-        switch (targetTopic){
+        switch (targetTopic) {
             case "pending":
                 pendingEmitter.send(objToTransfer);
                 break;
@@ -213,12 +205,12 @@ public class KafkaService {
 
     /**
      * It gets the all work orders from specific Kafka topic according to given parameter.
-     * */
+     */
     public List<WorkOrder> getAll(String topicId) {
         List<WorkOrder> workOrders = new ArrayList<>();
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
-            consumer.subscribe(Arrays.asList(topicId));
+            consumer.subscribe(Collections.singletonList(topicId));
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
@@ -260,4 +252,9 @@ public class KafkaService {
             expiredEmitter.send((objJson));
         }
     }*/
+   /*
+   System.out.printf("Offset = %d\n", record.offset());
+   System.out.printf("Key    = %s\n", record.key());
+   System.out.printf("Value  = %s\n", record.value());
+   */
 }
