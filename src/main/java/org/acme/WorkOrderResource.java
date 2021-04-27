@@ -40,23 +40,18 @@ public class WorkOrderResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public List<WorkOrder> getAll(@QueryParam("topicId") String topicId) {
+
+        List<WorkOrder> temp = new ArrayList<>();
+        List<WorkOrder> workOrdersPending = kafkaService.getAll("pending");
+        List<WorkOrder> workOrdersProgress = kafkaService.getAll("in_progress");
+        List<WorkOrder> workOrdersDone = kafkaService.getAll("done");
+        List<WorkOrder> workOrdersExpired = kafkaService.getAll("expired");
+
         if(topicId.equals("pending")) {
-            List<WorkOrder> workOrdersPending = new ArrayList<>();
-            List<WorkOrder> workOrdersProgress = new ArrayList<>();
-            List<WorkOrder> workOrdersDone = new ArrayList<>();
-            List<WorkOrder> workOrdersExpired = new ArrayList<>();
-            List<WorkOrder> temp = new ArrayList<>();
-
-            workOrdersPending = kafkaService.getAll("pending");
-            workOrdersProgress = kafkaService.getAll("in_progress");
-            workOrdersDone = kafkaService.getAll("done");
-            workOrdersExpired = kafkaService.getAll("expired");
-
             for (WorkOrder woPending:workOrdersPending)
             {
                 for (WorkOrder woInProgress: workOrdersProgress)
                 {
-
                     if (woPending.workOrderId.equals(woInProgress.workOrderId))
                     {
                         temp.add(woPending);
@@ -82,17 +77,25 @@ public class WorkOrderResource {
             return workOrdersPending;
         }
         else if(topicId.equals("in_progress")) {
-                List<WorkOrder> workOrdersProgress = new ArrayList<>();
-                List<WorkOrder> workOrdersDone = new ArrayList<>();
-                List<WorkOrder> workOrdersExpired = new ArrayList<>();
 
-                workOrdersProgress = kafkaService.getAll("in_progress");
-                workOrdersDone = kafkaService.getAll("done");
-                workOrdersExpired = kafkaService.getAll("expired");
-
-                workOrdersProgress.removeAll(workOrdersDone);
-                workOrdersProgress.removeAll(workOrdersExpired);
-
+            for (WorkOrder woProgress:workOrdersProgress)
+            {
+                for (WorkOrder woDone: workOrdersDone)
+                {
+                    if (woProgress.workOrderId.equals(woDone.workOrderId))
+                    {
+                        temp.add(woProgress);
+                    }
+                }
+                for (WorkOrder woExpired: workOrdersExpired)
+                {
+                    if (woProgress.workOrderId.equals(woExpired.workOrderId))
+                    {
+                        temp.add(woProgress);
+                    }
+                }
+            }
+                workOrdersProgress.removeAll(temp);
                 return workOrdersProgress;
         }
 
