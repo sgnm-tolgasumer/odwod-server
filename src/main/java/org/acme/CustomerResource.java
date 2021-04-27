@@ -24,15 +24,15 @@ public class CustomerResource {
     It gets the number of records in Customer table on MySQL database.
     */
     @GET
-    @Path("{customerCount}")
+    @Path("customerCount/")
     @Produces(MediaType.APPLICATION_JSON)
-    public String getCount(@PathParam("customerCount") String customerCount) {
-        String count = "{\"count\": \"" + Customer.count() + "\" }";
-        return count;
+    public String getCount() {
+        return "{\"count\": \"" + Customer.count() + "\" }";
     }
 
     @GET
     @Path("{id}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Customer getSingle(@PathParam("id") Long id) {
         Customer entity = Customer.findById(id);
         if (entity == null) {

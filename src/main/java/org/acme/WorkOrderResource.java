@@ -132,11 +132,18 @@ public class WorkOrderResource {
     }
 
     @GET
-    @Path("{workOrderId}/{topic}")
+    @Path("single/{workOrderId}/{topic}")
     @Produces(MediaType.APPLICATION_JSON)
     public WorkOrder getSingle(@PathParam("workOrderId") String workOrderId, @PathParam("topic") String topic) {
         System.out.println(workOrderId + topic);
        return kafkaService.getSingle(workOrderId, topic);
+    }
+
+    @GET
+    @Path("activeCount/")
+    @Produces(MediaType.APPLICATION_JSON)
+    public String getCountActiveWorkOrders() {
+        return "{\"count\": \"" + getAll("in_progress").size() + "\" }";
     }
 
     /**
@@ -190,14 +197,14 @@ public class WorkOrderResource {
 
     /**
      * It returns all work orders according to customer's unique id.
-     * @param customerId String.
+     * @param userId String.
      * @return Work orders as JSON.
      */
     @GET
-    @Path("customer/{customerId}")
+    @Path("customer/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<WorkOrder> getWorkOrderByCustomer(@PathParam("customerId") String customerId) {
-        return kafkaService.getAllByCustomerId(customerId);
+    public List<WorkOrder> getWorkOrderByCustomer(@PathParam("userId") String userId) {
+        return kafkaService.getAllByCustomerId(userId);
     }
 
     /**
