@@ -74,6 +74,8 @@ public class KafkaService {
      * It searches and returns single work order by its id in specified topic.
      */
     public WorkOrder getSingle(String workOrderId, String topic) {
+        final int giveUp = 5;
+        int noRecordsCount = 0;
 
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
@@ -81,21 +83,31 @@ public class KafkaService {
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
-                ConsumerRecords<String, String> records = consumer.poll(100);
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(100);
 
-                for (ConsumerRecord<String, String> record : records) {
+                    if (records.count() == 0) {
+                        noRecordsCount++;
+                        if (noRecordsCount > giveUp) break;
+                        else continue;
+                    }
 
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
+                    for (ConsumerRecord<String, String> record : records) {
 
-                    if (workOrder.workOrderId.equals(workOrderId)) {
-                        System.out.println(workOrder.toString());
-                        return workOrder;
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
 
+                        if (workOrder.workOrderId.equals(workOrderId)) {
+                            System.out.println(workOrder.toString());
+                            return workOrder;
+
+                        }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                consumer.close();
             }
 
         }
@@ -106,6 +118,8 @@ public class KafkaService {
      * It searches and returns all work orders according to worker's unique id.
      */
     public List<WorkOrder> getAllByWorkerId(String workerId) {
+        final int giveUp = 5;
+        int noRecordsCount = 0;
 
         List<WorkOrder> workOrders = new ArrayList<>();
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
@@ -114,19 +128,28 @@ public class KafkaService {
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
-                ConsumerRecords<String, String> records = consumer.poll(100);
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(100);
+                    if (records.count() == 0) {
+                        noRecordsCount++;
+                        if (noRecordsCount > giveUp) break;
+                        else continue;
+                    }
 
-                for (ConsumerRecord<String, String> record : records) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
+                    for (ConsumerRecord<String, String> record : records) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
 
-                    if (workOrder.workerId != null && workOrder.workerId.equals(workerId)) {
-                        System.out.println(workOrder.toString());
-                        workOrders.add(workOrder);
+                        if (workOrder.workerId != null && workOrder.workerId.equals(workerId)) {
+                            System.out.println(workOrder.toString());
+                            workOrders.add(workOrder);
+                        }
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                consumer.close();
             }
 
         }
@@ -207,6 +230,9 @@ public class KafkaService {
      * It gets the all work orders from specific Kafka topic according to given parameter.
      */
     public List<WorkOrder> getAll(String topicId) {
+        final int giveUp = 5;
+        int noRecordsCount = 0;
+
         List<WorkOrder> workOrders = new ArrayList<>();
         try (KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig())) {
             // List of topics to subscribe to
@@ -214,15 +240,26 @@ public class KafkaService {
 
             try {
                 consumer.seekToBeginning(consumer.assignment());
-                ConsumerRecords<String, String> records = consumer.poll(100);
-                for (ConsumerRecord<String, String> record : records) {
-                    ObjectMapper objectMapper = new ObjectMapper();
-                    WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
+                while (true) {
+                    ConsumerRecords<String, String> records = consumer.poll(100);
 
-                    workOrders.add(workOrder);
+                    if (records.count() == 0) {
+                        noRecordsCount++;
+                        if (noRecordsCount > giveUp) break;
+                        else continue;
+                    }
+
+                    for (ConsumerRecord<String, String> record : records) {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        WorkOrder workOrder = objectMapper.readValue(record.value(), WorkOrder.class);
+
+                        workOrders.add(workOrder);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                consumer.close();
             }
 
         }
