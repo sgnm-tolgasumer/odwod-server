@@ -18,8 +18,8 @@ public class WorkerResource {
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Worker getSingle(@PathParam("id") Long id) {
-        Worker entity = Worker.findById(id);
+    public Worker getSingle(@PathParam("id") String id) {
+        Worker entity = Worker.find("userId", id).firstResult();
         if (entity == null) {
             throw new WebApplicationException("Worker with id of " + id + " does not exist.", 404);
         }
@@ -50,14 +50,11 @@ public class WorkerResource {
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Worker update(@PathParam("id") Long id, Worker worker) {
-        Worker entity = worker.findById(id);
+    public Worker update(@PathParam("id") String id, Worker worker) {
+        Worker entity = Worker.find("userId", id).firstResult();
         entity.name = worker.name;
         entity.surname = worker.surname;
         entity.telephone = worker.telephone;
-        entity.mail = worker.mail;
-        entity.birthDate = worker.birthDate;
-        entity.addressCity = worker.addressCity;
         entity.workableDistricts = worker.workableDistricts;
         entity.jobTypes = worker.jobTypes;
         entity.persist();
