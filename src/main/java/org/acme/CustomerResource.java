@@ -33,8 +33,8 @@ public class CustomerResource {
     @GET
     @Path("{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Customer getSingle(@PathParam("id") Long id) {
-        Customer entity = Customer.findById(id);
+    public Customer getSingle(@PathParam("id") String id) {
+        Customer entity = Customer.find("userId", id).firstResult();
         if (entity == null) {
             throw new WebApplicationException("Customer with id of " + id + " does not exist.", 404);
         }
@@ -55,12 +55,11 @@ public class CustomerResource {
     @Path("{id}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Customer update(@PathParam("id") Long id, Customer customer) {
-        Customer entity = customer.findById(id);
+    public Customer update(@PathParam("id") String id, Customer customer) {
+        Customer entity = Customer.find("userId", id).firstResult();
         entity.name = customer.name;
         entity.surname = customer.surname;
         entity.telephone = customer.telephone;
-        entity.birthDate = customer.birthDate;
         entity.persist();
         return entity;
     }
