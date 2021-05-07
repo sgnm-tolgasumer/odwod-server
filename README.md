@@ -7,8 +7,11 @@
 - Database operations handled with Panache Hibernate ORM.
 - REST API is created for CRUD operations.
 
+## Live Demo Server on Google Cloud
+http://worderize.codes
+
 ## Poster of the Project
-![Worderize_poster_github](https://user-images.githubusercontent.com/34353055/117163026-ee206980-adcb-11eb-9634-16d44f393932.jpeg)
+![POSTER_LAST](https://user-images.githubusercontent.com/34353055/117486602-81939f00-af72-11eb-8784-dd728e4dfa31.jpeg)
 
 ### What is Worderize
 A work order is a task or job that can be scheduled and assigned to someone who wants to get this job. Worderize is a platform in which customers can create and workers can get the work orders. Worderize brings customers and workers together to manage work orders in an easy way. 
